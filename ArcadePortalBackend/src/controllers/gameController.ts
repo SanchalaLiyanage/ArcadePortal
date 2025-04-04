@@ -11,6 +11,7 @@ export const getGames = async (req: Request, res: Response) => {
   }
 };
 
+
 // ✅ Add a new game
 export const addGame = async (req: Request, res: Response) => {
   try {
