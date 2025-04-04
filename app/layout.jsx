@@ -1,20 +1,28 @@
-import { Inter } from "next/font/google"
-import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
-import { Toaster } from "@/components/ui/toaster"
-import { AuthProvider } from "@/lib/auth-provider"
+// RootLayout.jsx
+"use client"; // This is for client-side features like useState, useEffect, etc.
 
-const inter = Inter({ subsets: ["latin"] })
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/toaster";
+import { AuthProvider } from "@/lib/auth-provider";
+import { useEffect, useState } from 'react';
+import { fetchGames, fetchFeaturedGames, fetchGameById, fetchRelatedGames, incrementGamePlays, Game } from '../ArcadePortalBackend/src/services/api';
 
-export const metadata = {
-  title: "Arcade Portal - The Ultimate Gaming Portal",
-  description: "Play the best online games for free on Arcade Portal",
-    generator: 'v0.dev'
-}
+// Import metadata from a separate file
+import { metadata } from './metadata'; // <-- Import here, but don't define inside this file
+
+const inter = Inter({ subsets: ["latin"] });
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* You can add dynamic metadata here if needed, or handle in a specific way */}
+        <meta name="description" content={metadata.description} />
+        <meta name="generator" content={metadata.generator} />
+        <title>{metadata.title}</title>
+      </head>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <AuthProvider>
@@ -24,9 +32,5 @@ export default function RootLayout({ children }) {
         </ThemeProvider>
       </body>
     </html>
-  )
+  );
 }
-
-
-
-import './globals.css'
