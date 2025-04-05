@@ -1,82 +1,77 @@
-// import { Suspense } from "react"
-// import Header from "@/components/header"
-// import Hero from "@/components/hero"
-// import FeaturedGames from "@/components/featured-games"
-// import GameGrid from "@/components/game-grid"
-// import Footer from "@/components/footer"
-// import { useEffect, useState } from 'react';
-// import { fetchGames, fetchFeaturedGames, fetchGameById, fetchRelatedGames, incrementGamePlays, Game } from '../services/api';
-// import { GamesSkeleton } from "@/components/skeletons"
+'use client';  // Mark this file as a client-side component
 
-// export default function HomePage() {
-//   return (
-//     <main className="min-h-screen bg-[#121218]">
-//       <Header />
-//       <Hero />
-//       <div className="container mx-auto px-4 py-8">
-//         <FeaturedGames />
-//         <h2 className="text-3xl font-bold text-white mt-12 mb-6 neon-text">All Games</h2>
-//         <Suspense fallback={<GamesSkeleton />}>
-//           <GameGrid />
-//         </Suspense>
-//       </div>
-//       <Footer />
-//     </main>
-//   )
-// }
-
-
-'use client';  // Marking the component as a client component to use React hooks
-
-import { Suspense, useEffect, useState } from "react";
+import { useState, useEffect } from 'react';
+import { getGameBySlug } from '@/lib/api';
 import Header from "@/components/header";
 import Hero from "@/components/hero";
 import FeaturedGames from "@/components/featured-games";
-import GameGrid from "@/components/game-grid";
 import Footer from "@/components/footer";
-import { fetchGames, fetchFeaturedGames, fetchGameById, fetchRelatedGames, incrementGamePlays, Game } from '../lib/api';
-import { GamesSkeleton } from "@/components/skeletons";
 
-export default function HomePage() {
-  const [games, setGames] = useState([]);
+// Component to render the game page
+export default function GamePage({ params }) {
+  const [game, setGame] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Fetch all games when the component mounts
+  // Fetch the game data when the component mounts or when slug changes
   useEffect(() => {
-    const loadGames = async () => {
+    if (!params?.slug) {
+      setError("Game slug is missing.");
+      setLoading(false);
+      return; // Early return if slug is undefined
+    }
+
+    const loadGame = async () => {
+      setLoading(true);  // Set loading state to true when starting to fetch data
+      setError(null);    // Reset error state
+
       try {
-        const gamesData = await fetchGames();  // Adjust if you need to fetch featured games or other data
-        setGames(gamesData);
+        // Fetch the game data using the slug from params
+        const gameData = await getGameBySlug(params.slug);
+
+        // If gameData is null or undefined, throw an error
+        if (!gameData) {
+          throw new Error("Game not found");
+        }
+
+        setGame(gameData);  // Update state with fetched game data
       } catch (error) {
-        console.error('Error loading games:', error);
+        // Handle any errors during fetching
+        console.error("Error loading game:", error);
+        setError("Failed to load game. Please try again later.");
       } finally {
-        setLoading(false);
+        setLoading(false);  // Set loading state to false after fetching is done
       }
     };
 
-    loadGames();
-  }, []);  // Empty dependency array ensures this only runs once after mount
+    loadGame();
+  }, [params?.slug]); // Only fetch data when the slug changes
+
+  // Show loading message while fetching
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  // Show error message if an error occurred during fetch
+  if (error) {
+    return <div>{error}</div>;
+  }
+
+  // Show "Game not found" if no game data is available
+  if (!game) {
+    return <div>Game not found</div>;
+  }
 
   return (
-    <main className="min-h-screen bg-[#121218]">
+    <main>
       <Header />
-      <Hero />
-      <div className="container mx-auto px-4 py-8">
+      <Hero game={game} />
+      <div className="container">
         <FeaturedGames />
-        <h2 className="text-3xl font-bold text-white mt-12 mb-6 neon-text">All Games</h2>
-        
-        {/* If the data is still loading, show skeleton. Otherwise, display the games */}
-        {loading ? (
-          <GamesSkeleton />
-        ) : (
-          <Suspense fallback={<GamesSkeleton />}>
-            <GameGrid games={games} />  {/* Pass the games data to GameGrid */}
-          </Suspense>
-        )}
+        <h2>{game.name}</h2>
+        <p>{game.description}</p>
       </div>
       <Footer />
     </main>
   );
 }
-
-
