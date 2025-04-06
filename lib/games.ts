@@ -223,57 +223,72 @@
 
 // Define the type for the Game object based on the structure returned from the API
 export interface Game {
-    id: string;
-    name: string;
-    description: string;
-    // Add other properties according to the structure of your game data
-  }
-  
-  // Function to fetch all games
-  export async function getAllGames(): Promise<Game[]> {
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/games`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        cache: 'no-store', // Ensures the request is not cached
-      });
-  
-      // Check if the response is OK (status code 2xx)
-      if (!res.ok) {
-        throw new Error(`Failed to fetch games: ${res.statusText}`);
-      }
-  
-      // Parse and return the JSON response
-      const games: Game[] = await res.json();
-      return games;
-    } catch (error) {
-      // Log any error that occurred during the fetch process
-      console.error('Error fetching games:', error);
-      throw error; // Re-throw the error so it can be handled by the caller
-    }
-  }
-  
-  // Function to fetch a single game by its slug
-  // lib/games.ts
-export async function getGameBySlug(slug: string): Promise<Game | null> {
-    if (!slug) {
-      throw new Error('Slug is required');
-    }
-  
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/games/${slug}`, {
+  id: string;          // Use '_id' if backend uses MongoDB
+  title: string;
+  slug: string;
+  description: string;
+  thumbnail: string;    // Or 'thumbnail' to match backend
+  plays: number;
+  category?: string;
+  instructions?: string;
+  developer?: string;  // Optional: Add if needed
+  enabled?: boolean;   // Optional: Add if needed
+}
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+
+// Fetch all games
+export async function getAllGames(): Promise<Game[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/games`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store', // Prevent Next.js from caching
     });
-  
+
     if (!res.ok) {
-      throw new Error('Failed to fetch game');
+      throw new Error(`Failed to fetch games: ${res.statusText}`);
     }
-  
-    const game: Game = await res.json();
-    return game;
+
+    const games: Game[] = await res.json();
+    return games.map(game => ({
+      ...game,
+      imageUrl: game.thumbnail, // Map 'thumbnail' to 'imageUrl' if needed
+    }));
+  } catch (error) {
+    console.error('Error fetching games:', error);
+    throw error;
   }
-  
+}
+
+// Fetch a game by slug
+export async function getGameBySlug(slug: string): Promise<Game | null> {
+  if (!slug) throw new Error('Slug is required');
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/games/slug/${slug}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!res.ok) {
+      if (res.status === 404) return null; // Game not found
+      throw new Error(`Failed to fetch game: ${res.statusText}`);
+    }
+
+    const game: Game = await res.json();
+    return {
+      ...game,
+      thumbnail: game.thumbnail, // Ensure consistent field names
+    };
+  } catch (error) {
+    console.error(`Error fetching game with slug "${slug}":`, error);
+    throw error;
+  }
+}
+
+// Optional: Fetch featured games (first 3)
+export async function getFeaturedGames(): Promise<Game[]> {
+  const games = await getAllGames();
+  return games.slice(0, 3);
+}

@@ -1,23 +1,31 @@
 import mongoose, { Document } from "mongoose";
 
-interface IGame extends Document {
+export interface IGame extends Document {
   title: string;
+  slug: string;  // Added missing slug field
   url: string;
   thumbnail: string;
   enabled: boolean;
   category: string;
   description: string;
-  views: number;
+  plays: number;  // Changed from views to plays to match controller
   likes: number;
   createdAt: Date;
+  updatedAt?: Date;  // Added for update tracking
 }
 
 const gameSchema = new mongoose.Schema<IGame>({
   title: { 
     type: String, 
     required: true,
+    trim: true
+  },
+  slug: {  // Added slug field
+    type: String,
+    required: true,
     unique: true,
-    trim: true  // Removes whitespace
+    lowercase: true,
+    trim: true
   },
   url: { 
     type: String, 
@@ -29,7 +37,7 @@ const gameSchema = new mongoose.Schema<IGame>({
   },
   thumbnail: { 
     type: String, 
-    required: true,  // Now required (your seed provides thumbnails)
+    required: true,
     validate: {
       validator: (v: string) => v.startsWith('http'),
       message: 'Thumbnail must be a valid URL'
@@ -41,16 +49,16 @@ const gameSchema = new mongoose.Schema<IGame>({
   },
   category: { 
     type: String, 
-    enum: ['Arcade', 'Adventure', 'Puzzle', 'Racing', 'Action'], // Matches seed data
+    enum: ['Arcade', 'Adventure', 'Puzzle', 'Racing', 'Action'],
     required: true,
     default: 'Arcade'
   },
   description: { 
     type: String, 
-    required: true,  // Now required
-    maxlength: 500   // Increased for longer descriptions
+    required: true,
+    maxlength: 500
   },
-  views: { 
+  plays: {  // Changed from views to plays
     type: Number, 
     default: 0,
     min: 0
@@ -59,18 +67,15 @@ const gameSchema = new mongoose.Schema<IGame>({
     type: Number, 
     default: 0,
     min: 0
-  },
-  createdAt: { 
-    type: Date, 
-    default: Date.now,
-    immutable: true  // Prevents modification after creation
   }
+}, { 
+  timestamps: true  // Automatically adds createdAt and updatedAt
 });
 
-// Optimized text index
+// Text index for search
 gameSchema.index(
   { title: 'text', description: 'text' },
-  { weights: { title: 3, description: 1 } }  // Title has higher search priority
+  { weights: { title: 3, description: 1 } }
 );
 
 const Game = mongoose.model<IGame>('Game', gameSchema);

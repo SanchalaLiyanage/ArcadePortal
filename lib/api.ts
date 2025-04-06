@@ -168,6 +168,23 @@ export function clearApiCache(): void {
   requestCache.clear();
 }
 
+export async function fetchGameBySlug(slug: string): Promise<Game | null> {
+  const cacheKey = `game-${slug}`;
+
+  if (!requestCache.has(cacheKey)) {
+    const fetchPromise = apiFetch<Game>(`/games/slug/${slug}`)
+      .catch((error: unknown) => {
+        console.error(`Error fetching game with slug ${slug}:`, error);
+        requestCache.delete(cacheKey);
+        return null;
+      });
+
+    requestCache.set(cacheKey, fetchPromise);
+  }
+
+  return requestCache.get(cacheKey)!;
+}
+
 
 // lib/api.ts (frontend only)
 
