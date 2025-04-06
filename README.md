@@ -26,5 +26,5 @@ To run the project locally, follow these steps:
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/arcadePortal.git
-cd arcadePortal
+[https://github.com/SanchalaLiyanage/ArcadePortal.git]
+
